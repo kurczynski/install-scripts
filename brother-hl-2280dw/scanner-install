@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+# A simple script to install network scanner drivers. More info at:
+# http://welcome.solutions.brother.com/bsc/public_s/id/linux/en/instruction_scn1b.html
+
+# TODO: Add driver for physical scanner button (brscan-skey) and enable its
+# service.
+
+BRSCAN='brscan4-0.4.4-1.x86_64.rpm'
+DEFAULT_NAME='Brother-scanner'
+DEFAULT_MODEL='HL-2280DW'
+
+if [[ $(whoami) != "root" ]]; then
+	printf "%s\n" "Must be run as root."
+	exit 1
+fi
+
+if [ ! -f ${BRSCAN} ]; then
+	printf "%s\n" "Missing required file ${BRSCAN}"
+	exit 1
+fi
+
+printf "Make sure the scanner is plugged in via USB ONLY for the installation!\n"
+printf "(press enter to continue)\n"
+read
+
+rpm -q ${BRSCAN/.rpm} > /dev/null
+if [[ ${?} != 0 ]]; then
+	rpm -ihv --nodeps ${BRSCAN} || exit 1
+else
+	printf "%s\n" "${BRSCAN/.rpm} is already installed."
+fi
+
+# Get the scanner name.
+printf "Scanner name (press enter for default \"%s\"): " "${DEFAULT_NAME}"
+read name
+[[ "${name}" == '' ]] && name="${DEFAULT_NAME}"
+
+# Get the scanner model.
+printf "Scanner model (press enter for default \"%s\"): " "${DEFAULT_MODEL}"
+read model
+[[ "${model}" == '' ]] && model="${DEFAULT_MODEL}"
+
+# Get the scanner IP address.
+printf "%s" "Scanner IP address: "
+read ip
+
+brsaneconfig4 -a name="${name}" model="${model}" ip="${ip}" || exit 1
+
+printf "Scanner successfully added.\n"
+
+exit 0
